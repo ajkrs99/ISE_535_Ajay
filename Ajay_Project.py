@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[85]:
+# In[48]:
 
 
 import pandas as pd
@@ -11,9 +11,10 @@ from mip import *
 import os
 import matplotlib.pyplot as plt
 import streamlit as st
+import time
 
 
-# In[86]:
+# In[49]:
 
 
 df=pd.read_excel("Project_data.xlsx", sheet_name="Plant Data")
@@ -21,7 +22,7 @@ df1=pd.read_excel("Project_data.xlsx", sheet_name="DC Data")
 df2=pd.read_excel("Project_data.xlsx", sheet_name="Customer Data")
 
 
-# In[87]:
+# In[50]:
 
 
 plant=df['Mfg Plant'].tolist()
@@ -35,7 +36,7 @@ region= df2['Customer Locations']
 demand=df2['Demand'].tolist()
 
 
-# In[88]:
+# In[4]:
 
 
 indist=[]
@@ -47,7 +48,7 @@ for i in range(len(plant)):
     indist.append(a)
 
 
-# In[89]:
+# In[5]:
 
 
 outdist=[]
@@ -59,39 +60,31 @@ for i in range(len(dc)):
     outdist.append(a)
 
 
-# In[90]:
+# In[9]:
 
 
-st.write("Welcome to the inventory network optimizer and visualizer")
+numDC=3
 
 
-# In[91]:
+# In[10]:
 
 
-opt=np.array([3,4,5])
+time.sleep(1)
 
 
-# In[92]:
-
-
-numDC=st.radio("How many DCs do you want open?\nNote: Minimum of 3 DCs to satisfy all demand",options=opt,index=2)
-
-
-# numDC=input(print("How many DCs do you want open?\nNote: Minimum of 3 DCs to satisfy all demand"))
-
-# In[70]:
+# In[27]:
 
 
 M=xsum(demand[i] for i in range(len(demand)))
 
 
-# In[71]:
+# In[28]:
 
 
 model = Model()
 
 
-# In[72]:
+# In[29]:
 
 
 inflow= [[model.add_var() for j in range(len(dc))] for i in range(len(plant))]
@@ -99,13 +92,13 @@ outflow= [[model.add_var() for k in range(len(region))] for j in range(len(dc))]
 opendc=[model.add_var(var_type=BINARY) for i in range(len(dc))]
 
 
-# In[73]:
+# In[30]:
 
 
 model.objective=minimize(xsum(plvarcost[i]*inflow[i][j] for j in range(len(dc)) for i in range(len(plant))) +                         xsum(dcfixcost[j]*opendc[j] for j in range(len(dc))) +                         xsum(dcvarcost[j]*outflow[j][k] for j in range(len(dc)) for k in range(len(region))) +                         xsum(inflow[i][j]*indist[i][j] for i in range(len(plant)) for j in range(len(dc))) +                         xsum(outflow[j][k]*outdist[j][k] for j in range(len(dc)) for k in range(len(region))))
 
 
-# In[74]:
+# In[31]:
 
 
 for i in range(len(plant)):
@@ -123,41 +116,40 @@ for j in range(len(dc)):
 for j in range(len(dc)):
     model += xsum(outflow[j][k] for k in range(len(region))) <= M.x*opendc[j]
 
-model += xsum(opendc[j] for j in range(len(dc))) <=numDC
-model += xsum(opendc[j] for j in range(len(dc))) >=numDC
+model += xsum(opendc[j] for j in range(len(dc))) ==3
 
 
-# In[75]:
+# In[32]:
 
 
 model.optimize()
 
 
-# In[ ]:
+# In[33]:
 
 
 st.write("The objective Value is:")
 
 
-# In[76]:
+# In[34]:
 
 
 model.objective_value
 
 
-# In[77]:
+# In[35]:
 
 
 result=pd.DataFrame(data=None, index= plant, columns=dc)
 
 
-# In[ ]:
+# In[36]:
 
 
 st.write("Units moved from each plant to DCs")
 
 
-# In[78]:
+# In[37]:
 
 
 for i in plant:
@@ -166,7 +158,7 @@ for i in plant:
 result
 
 
-# In[79]:
+# In[38]:
 
 
 result2= pd.DataFrame(data=None, index=dc, columns=region)
@@ -178,7 +170,7 @@ result2= pd.DataFrame(data=None, index=dc, columns=region)
 st.write("Units moved from each DC to Customers")
 
 
-# In[80]:
+# In[ ]:
 
 
 for j in range(len(dc)): 
@@ -187,7 +179,7 @@ for j in range(len(dc)):
 result2 
 
 
-# In[81]:
+# In[ ]:
 
 
 import plotly.graph_objects as go
@@ -199,7 +191,7 @@ G = nx.Graph()
 
 
 
-# In[82]:
+# In[ ]:
 
 
 # adding nodes
@@ -297,10 +289,4 @@ fig.update_xaxes(showticklabels = False)
 fig.update_yaxes(showticklabels = False)
 # Show figure
 fig.show()
-
-
-# In[ ]:
-
-
-
 
